@@ -118,27 +118,38 @@ async function acceptCookies(page) {
         );
       });
 
-    // Tiempo adicional para que aparezcan límites y colores.
-    await page.waitForTimeout(2500);
+   // Tiempo adicional para que aparezcan límites y colores.
+await page.waitForTimeout(2500);
 
-    const tomorrowStamp = getTomorrowStampMadrid();
+// Ocultamos los botones + y - del mapa antes de capturarlo.
+await page.addStyleTag({
+  content: `
+    .leaflet-control-zoom {
+      display: none !important;
+    }
+  `
+});
 
-    const latestFile = 'docs/aemet-manana.png';
-    const archiveFile =
-      `docs/archive/aemet-manana-${tomorrowStamp}.png`;
+await page.waitForTimeout(500);
 
-    /*
-     * Capturamos únicamente el contenedor del mapa.
-     * Esto evita:
-     * - la cabecera;
-     * - el aviso de cookies;
-     * - el panel izquierdo;
-     * - el corte de la parte inferior.
-     */
-    await map.screenshot({
-      path: latestFile,
-      type: 'png'
-    });
+const tomorrowStamp = getTomorrowStampMadrid();
+
+const latestFile = 'docs/aemet-manana.png';
+const archiveFile =
+  `docs/archive/aemet-manana-${tomorrowStamp}.png`;
+
+/*
+ * Capturamos únicamente el contenedor del mapa.
+ * Esto evita:
+ * - la cabecera;
+ * - el aviso de cookies;
+ * - el panel izquierdo;
+ * - el corte de la parte inferior.
+ */
+await map.screenshot({
+  path: latestFile,
+  type: 'png'
+});
 
     // Copia histórica correspondiente a la fecha de mañana.
     fs.copyFileSync(latestFile, archiveFile);
