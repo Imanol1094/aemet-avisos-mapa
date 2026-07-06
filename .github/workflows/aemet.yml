@@ -1,9 +1,13 @@
 name: Captura diaria AEMET
 
 on:
+  # Permite ejecutar manualmente el workflow para hacer pruebas.
   workflow_dispatch:
+
+  # Lo ejecuta cada día entre mayo y septiembre a las 08:30,
+  # utilizando la hora peninsular española.
   schedule:
-    - cron: '45 9 * * *'
+    - cron: '30 9 * 5-9 *'
       timezone: 'Europe/Madrid'
 
 permissions:
@@ -22,22 +26,19 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Inicializar npm
-        run: npm init -y
-
       - name: Instalar Playwright
         run: npm install playwright
 
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Ejecutar captura
+      - name: Capturar mapa AEMET
         run: node capture-aemet.js
 
-      - name: Guardar cambios en GitHub
+      - name: Guardar imágenes en el repositorio
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/
-          git commit -m "Actualiza mapa AEMET" || echo "Sin cambios"
+          git diff --cached --quiet || git commit -m "Actualiza mapa diario de AEMET"
           git push
