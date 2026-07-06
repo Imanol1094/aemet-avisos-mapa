@@ -1,0 +1,43 @@
+name: Captura diaria AEMET
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '45 9 * * *'
+      timezone: 'Europe/Madrid'
+
+permissions:
+  contents: write
+
+jobs:
+  captura:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Inicializar npm
+        run: npm init -y
+
+      - name: Instalar Playwright
+        run: npm install playwright
+
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar captura
+        run: node capture-aemet.js
+
+      - name: Guardar cambios en GitHub
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          git commit -m "Actualiza mapa AEMET" || echo "Sin cambios"
+          git push
