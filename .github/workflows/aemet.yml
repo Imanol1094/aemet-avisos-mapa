@@ -1,24 +1,30 @@
 name: Captura diaria AEMET
 
 on:
-  # Permite ejecutar el proceso manualmente desde la pestaña Actions.
+  # Permite ejecutar el workflow manualmente desde la pestaña Actions.
   workflow_dispatch:
 
   # Ejecuciones automáticas diarias entre mayo y septiembre.
-  # Se hacen dos intentos para reducir el riesgo de que un retraso puntual
-  # de GitHub deje la imagen sin actualizar antes del correo de las 09:15.
   schedule:
-    - cron: '10 8 * 5-9 *'
+    # Primer intento a las 09:00, hora de Madrid.
+    - cron: '0 9 * 5-9 *'
       timezone: 'Europe/Madrid'
 
-    - cron: '40 8 * 5-9 *'
+    # Segundo intento a las 10:00, hora de Madrid.
+    - cron: '0 10 * 5-9 *'
       timezone: 'Europe/Madrid'
 
-# Autoriza al workflow a guardar las capturas dentro del repositorio.
+    # EJECUCIÓN TEMPORAL DE PRUEBA:
+    # Se ejecutará también a las 10:35 todos los días.
+    # Elimina este bloque cuando termines de comprobarlo.
+    - cron: '35 10 * 5-9 *'
+      timezone: 'Europe/Madrid'
+
+# Permite que el workflow guarde las imágenes generadas en el repositorio.
 permissions:
   contents: write
 
-# Evita que dos ejecuciones modifiquen los archivos simultáneamente.
+# Evita que dos ejecuciones modifiquen los archivos al mismo tiempo.
 concurrency:
   group: captura-diaria-aemet
   cancel-in-progress: false
