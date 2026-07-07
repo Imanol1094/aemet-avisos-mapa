@@ -1,25 +1,19 @@
 name: Captura diaria AEMET
 
 on:
+  # Permite ejecutar el workflow manualmente desde GitHub.
   workflow_dispatch:
 
-  schedule:
-    # Primer intento diario a las 09:00.
-    - cron: '0 9 * 5-9 *'
-      timezone: 'Europe/Madrid'
+  # Permite que Power Automate inicie el workflow.
+  repository_dispatch:
+    types:
+      - captura_aemet
 
-    # Segundo intento diario a las 10:00.
-    - cron: '0 10 * 5-9 *'
-      timezone: 'Europe/Madrid'
-
-    # PRUEBA TEMPORAL: cada 15 minutos.
-    # Eliminar cuando confirmemos que la ejecución automática funciona.
-    - cron: '*/15 * * 5-9 *'
-      timezone: 'Europe/Madrid'
-
+# Permite que el workflow guarde las capturas en el repositorio.
 permissions:
   contents: write
 
+# Evita que dos ejecuciones modifiquen los archivos simultáneamente.
 concurrency:
   group: captura-diaria-aemet
   cancel-in-progress: false
@@ -31,6 +25,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      - name: Mostrar origen de la ejecución
+        run: |
+          echo "Evento que inició el workflow: ${{ github.event_name }}"
+
       - name: Descargar el repositorio
         uses: actions/checkout@v4
 
