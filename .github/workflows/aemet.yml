@@ -1,44 +1,69 @@
 name: Captura diaria AEMET
 
 on:
-  # Permite ejecutar manualmente el workflow para hacer pruebas.
+  # Permite ejecutar el proceso manualmente desde la pestaña Actions.
   workflow_dispatch:
 
-  # Lo ejecuta cada día entre mayo y septiembre a las 08:30,
-  # utilizando la hora peninsular española.
+  # Ejecuciones automáticas diarias entre mayo y septiembre.
+  # Se hacen dos intentos para reducir el riesgo de que un retraso puntual
+  # de GitHub deje la imagen sin actualizar antes del correo de las 09:15.
   schedule:
-    - cron: '30 9 * 5-9 *'
+    - cron: '10 8 * 5-9 *'
       timezone: 'Europe/Madrid'
 
+    - cron: '40 8 * 5-9 *'
+      timezone: 'Europe/Madrid'
+
+# Autoriza al workflow a guardar las capturas dentro del repositorio.
 permissions:
   contents: write
 
+# Evita que dos ejecuciones modifiquen los archivos simultáneamente.
+concurrency:
+  group: captura-diaria-aemet
+  cancel-in-progress: false
+
 jobs:
   captura:
+    name: Generar captura de AEMET
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Descargar repositorio
+      - name: Descargar el repositorio
         uses: actions/checkout@v4
 
-      - name: Instalar Node.js
+      - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Instalar Playwright
-        run: npm install playwright
+        run: npm install --no-save playwright
 
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Capturar mapa AEMET
+      - name: Ejecutar captura de AEMET
         run: node capture-aemet.js
 
-      - name: Guardar imágenes en el repositorio
+      - name: Comprobar que se ha generado la imagen
+        run: |
+          if [ ! -f "docs/aemet-manana.png" ]; then
+            echo "ERROR: No se ha generado docs/aemet-manana.png"
+            exit 1
+          fi
+
+      - name: Guardar las imágenes en el repositorio
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add docs/
-          git diff --cached --quiet || git commit -m "Actualiza mapa diario de AEMET"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "La captura no contiene cambios que guardar."
+          else
+            git commit -m "Actualiza mapa diario de AEMET"
+            git push
+          fi
